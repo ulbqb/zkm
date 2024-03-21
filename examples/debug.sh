@@ -3,8 +3,6 @@
 SEG_SIZE=$1
 SEG_FILE_DIR=/tmp/output
 
-rm -rf $SEG_FILE_DIR
-
 SEG_FILE_NUM=$(ls $SEG_FILE_DIR -1 | wc -l)
 echo "segment num: $SEG_FILE_NUM"
 
