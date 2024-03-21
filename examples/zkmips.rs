@@ -21,8 +21,9 @@ use zkm::proof::PublicValues;
 use zkm::prover::prove;
 use zkm::verifier::verify_proof;
 
-const DEGREE_BITS_RANGE: [[std::ops::Range<usize>; 6]; 5] = [
+const DEGREE_BITS_RANGE: [[std::ops::Range<usize>; 6]; 6] = [
     [16..17, 12..13, 14..16, 9..12, 15..17, 17..19],
+    [16..17, 15..17, 15..18, 9..14, 15..19, 19..21],
     [16..17, 15..17, 15..17, 9..12, 15..17, 19..20],
     [16..17, 15..17, 16..19, 11..14, 16..19, 19..21],
     [16..17, 17..18, 16..19, 11..14, 16..19, 21..22],
@@ -32,10 +33,11 @@ const DEGREE_BITS_RANGE: [[std::ops::Range<usize>; 6]; 5] = [
 fn select_degree_bits(seg_size: usize) -> [std::ops::Range<usize>; 6] {
     let seg_size_to_bits = std::collections::BTreeMap::from([
         (1024, 0),
-        (16384, 1),
-        (32768, 2),
-        (65536, 3),
-        (262144, 4),
+        (8192, 1),
+        (16384, 2),
+        (32768, 3),
+        (65536, 4),
+        (262144, 5),
     ]);
     match seg_size_to_bits.get(&seg_size) {
         Some(s) => DEGREE_BITS_RANGE[*s].clone(),
