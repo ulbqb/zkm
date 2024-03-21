@@ -145,6 +145,7 @@ fn main() {
         "aggregate_proof" => aggregate_proof().unwrap(),
         "aggregate_proof_all" => aggregate_proof_all().unwrap(),
         "prove_groth16" => prove_groth16(),
+        "aggregate_proof_all_debug" => aggregate_proof_all_debug().unwrap(),
         _ => helper(),
     };
 }
@@ -369,4 +370,38 @@ fn aggregate_proof_all() -> anyhow::Result<()> {
 
     total_timing.filter(Duration::from_millis(100)).print();
     result
+}
+
+fn aggregate_proof_all_debug() -> anyhow::Result<()> {
+    type F = GoldilocksField;
+    const D: usize = 2;
+    type C = PoseidonGoldilocksConfig;
+
+    let basedir = env::var("BASEDIR").unwrap_or("/tmp/cannon".to_string());
+    let block = env::var("BLOCK_NO").unwrap_or("".to_string());
+    let file = env::var("BLOCK_FILE").unwrap_or(String::from(""));
+    let seg_dir = env::var("SEG_FILE_DIR").expect("segment file dir is missing");
+    let seg_file_number = env::var("SEG_FILE_NUM").expect("The segment file number is missing");
+    let seg_file_number = seg_file_number.parse::<_>().unwrap_or(2usize);
+    let seg_size = env::var("SEG_SIZE").unwrap_or(format!("{SEGMENT_STEPS}"));
+    let seg_size = seg_size.parse::<_>().unwrap_or(SEGMENT_STEPS);
+
+    let total_timing = TimingTree::new("prove total time", log::Level::Info);
+    let all_stark = AllStark::<F, D>::default();
+    let config = StarkConfig::standard_fast_config();
+    // Preprocess all circuits.
+    let all_circuits =
+        AllRecursiveCircuits::<F, C, D>::new(&all_stark, &select_degree_bits(seg_size), &config);
+
+    let seg_file = format!("{}/{}", seg_dir, seg_file_number);
+    let input_first = segment_kernel(&basedir, &block, &file, &seg_file, seg_size);
+    let mut timing = TimingTree::new("prove root first", log::Level::Info);
+    let (agg_proof, _) = all_circuits.prove_root(&all_stark, &input_first, &config, &mut timing)?;
+
+    timing.filter(Duration::from_millis(100)).print();
+    all_circuits.verify_root(agg_proof.clone())?;
+
+    total_timing.filter(Duration::from_millis(100)).print();
+
+    Ok(())
 }
